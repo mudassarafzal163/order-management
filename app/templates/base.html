@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShopManager – {{ current_user.shop_name if current_user.is_authenticated else 'Login' }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+        .navbar {
+            background: #1a1a2e;
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar h1 { font-size: 20px; color: #4ecca3; }
+        .navbar a { color: #ccc; text-decoration: none; margin-left: 20px; font-size: 14px; }
+        .navbar a:hover { color: #4ecca3; }
+
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 220px;
+            height: 100%;
+            background: #16213e;
+            padding: 30px 0;
+        }
+        .sidebar a {
+            display: block;
+            color: #aaa;
+            text-decoration: none;
+            padding: 14px 30px;
+            font-size: 15px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            color: #4ecca3;
+            border-left: 3px solid #4ecca3;
+            background: rgba(78,204,163,0.08);
+        }
+        .sidebar .icon { margin-right: 10px; }
+
+        .main { margin-left: 220px; padding: 30px; }
+
+        .flash {
+            background: #4ecca3;
+            color: #1a1a2e;
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <h1>🛒 ShopManager</h1>
+    {% if current_user.is_authenticated %}
+    <div>
+        <span style="color:#4ecca3; font-size:14px;">{{ current_user.shop_name }}</span>
+        <a href="{{ url_for('main.logout') }}">Logout</a>
+    </div>
+    {% endif %}
+</div>
+
+{% if current_user.is_authenticated %}
+<div class="sidebar">
+    <a href="{{ url_for('main.dashboard') }}" class="{{ 'active' if request.endpoint == 'main.dashboard' }}">
+        <span class="icon">📊</span> Dashboard
+    </a>
+    <a href="{{ url_for('main.orders') }}" class="{{ 'active' if request.endpoint == 'main.orders' }}">
+        <span class="icon">📦</span> Orders
+    </a>
+    <a href="{{ url_for('main.inventory') }}" class="{{ 'active' if request.endpoint == 'main.inventory' }}">
+        <span class="icon">🗃️</span> Inventory
+    </a>
+</div>
+{% endif %}
+
+<div class="main">
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for msg in messages %}
+                <div class="flash">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

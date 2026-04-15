@@ -2,6 +2,8 @@
 {% block content %}
 <style>
     .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+
+    /* Add product form card */
     .add-form {
         background: white;
         border-radius: 12px;
@@ -9,72 +11,261 @@
         margin-bottom: 28px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     }
-    .add-form h3 { margin-bottom: 16px; font-size: 16px; }
-    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .form-row input {
+    .add-form h3 { margin-bottom: 16px; font-size: 16px; color: #1a1a2e; }
+
+    /* form grid — 3 columns on wide screen */
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; color: #888; font-weight: 600; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
         padding: 10px 14px;
         border: 1px solid #ddd;
         border-radius: 8px;
         font-size: 14px;
         outline: none;
-        flex: 1;
-        min-width: 140px;
+        background: #fafafa;
     }
-    .form-row input:focus { border-color: #4ecca3; }
-    .btn { padding: 10px 24px; background: #4ecca3; color: #1a1a2e; font-weight: 700; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
-    th { background: #1a1a2e; color: #4ecca3; padding: 12px 16px; text-align: left; font-size: 13px; }
-    td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f2f5; }
-    tr:last-child td { border-bottom: none; }
-    .stock-low { color: #e74c3c; font-weight: 700; }
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus { border-color: #4ecca3; background: white; }
+
+    /* hint text below inputs */
+    .hint { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+    .btn {
+        padding: 10px 28px;
+        background: #4ecca3;
+        color: #1a1a2e;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .btn:hover { background: #38b2a0; }
+
+    /* product cards grid */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+
+    /* each product card */
+    .product-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        border-left: 4px solid #4ecca3;
+    }
+    .product-card.low { border-left: 4px solid #e74c3c; }
+
+    .product-name { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+    .product-brand { font-size: 12px; color: #888; margin-bottom: 12px; }
+    .product-price { font-size: 20px; font-weight: 700; color: #4ecca3; margin-bottom: 12px; }
+
+    /* small tags for sizes and colors */
+    .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .tag {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #f0f2f5;
+        color: #444;
+    }
+    .tag.size { background: #e8f4fd; color: #2980b9; }
+    .tag.color { background: #fef9e7; color: #d68910; }
+
+    .stock-label { font-size: 12px; color: #888; margin-bottom: 6px; }
     .stock-ok { color: #4ecca3; font-weight: 700; }
-    .stock-input { width: 70px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
-    .update-btn { padding: 6px 14px; background: #1a1a2e; color: #4ecca3; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .stock-low { color: #e74c3c; font-weight: 700; }
+
+    /* stock update + delete row */
+    .card-actions { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+    .stock-input {
+        width: 70px;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+    .update-btn {
+        padding: 6px 14px;
+        background: #1a1a2e;
+        color: #4ecca3;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    .delete-btn {
+        padding: 6px 14px;
+        background: #fff0f0;
+        color: #e74c3c;
+        border: 1px solid #e74c3c;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    .empty { text-align: center; color: #888; padding: 40px; background: white; border-radius: 12px; }
 </style>
 
 <div class="page-title">🗃️ Inventory</div>
 
+<!-- ── ADD PRODUCT FORM ── -->
 <div class="add-form">
-    <h3>➕ Add New Product</h3>
+    <h3>➕ Add New Shoe Product</h3>
     <form method="POST" action="{{ url_for('main.add_product') }}">
-        <div class="form-row">
-            <input type="text" name="name" placeholder="Product Name (e.g. Nike Air Max)" required>
-            <input type="number" name="price" placeholder="Price (Rs.)" step="0.01" required>
-            <input type="number" name="stock" placeholder="Stock Quantity" required>
-            <button class="btn" type="submit">Add Product</button>
+
+        <!-- Row 1 — basic info -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Product Name *</label>
+                <input type="text" name="name" placeholder="e.g. Nike Air Max" required>
+            </div>
+            <div class="form-group">
+                <label>Brand</label>
+                <!-- common shoe brands as dropdown -->
+                <select name="brand">
+                    <option value="">Select Brand</option>
+                    <option>Nike</option>
+                    <option>Adidas</option>
+                    <option>Puma</option>
+                    <option>Reebok</option>
+                    <option>Bata</option>
+                    <option>Service</option>
+                    <option>Servis</option>
+                    <option>Hush Puppies</option>
+                    <option>Local</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Category</label>
+                <!-- shoe categories -->
+                <select name="category">
+                    <option value="">Select Category</option>
+                    <option>Sneakers</option>
+                    <option>Formal</option>
+                    <option>Sandals</option>
+                    <option>Slippers</option>
+                    <option>Boots</option>
+                    <option>Sports</option>
+                    <option>Kids</option>
+                    <option>Ladies</option>
+                </select>
+            </div>
         </div>
+
+        <!-- Row 2 — price, stock, sizes -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Price (Rs.) *</label>
+                <input type="number" name="price" placeholder="e.g. 3500" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Total Stock (pairs) *</label>
+                <input type="number" name="stock" placeholder="e.g. 20" required>
+            </div>
+            <div class="form-group">
+                <label>Available Sizes</label>
+                <!-- sizes as comma separated -->
+                <input type="text" name="sizes" placeholder="e.g. 39,40,41,42,43,44">
+                <span class="hint">Separate sizes with commas</span>
+            </div>
+        </div>
+
+        <!-- Row 3 — colors and description -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Available Colors</label>
+                <input type="text" name="colors" placeholder="e.g. Black,White,Navy Blue">
+                <span class="hint">Separate colors with commas</span>
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Description / Notes</label>
+                <textarea name="description" rows="2" placeholder="e.g. Original import, comes with box"></textarea>
+            </div>
+        </div>
+
+        <button class="btn" type="submit">Add Product</button>
     </form>
 </div>
 
-<table>
-    <thead>
-        <tr>
-            <th>#</th>
-            <th>Product Name</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Update Stock</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for p in products %}
-        <tr>
-            <td>{{ p.id }}</td>
-            <td>{{ p.name }}</td>
-            <td>Rs. {{ "%.0f"|format(p.price) }}</td>
-            <td class="{{ 'stock-low' if p.stock <= 3 else 'stock-ok' }}">
-                {{ p.stock }} {% if p.stock <= 3 %}⚠️{% endif %}
-            </td>
-            <td>
-                <form method="POST" action="{{ url_for('main.update_stock', product_id=p.id) }}" style="display:flex; gap:8px;">
-                    <input type="number" name="stock" class="stock-input" value="{{ p.stock }}" min="0">
-                    <button type="submit" class="update-btn">Update</button>
-                </form>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" style="text-align:center; color:#888; padding:30px;">No products yet. Add one above.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<!-- ── PRODUCTS GRID ── -->
+{% if products %}
+<div class="products-grid">
+    {% for p in products %}
+    <!-- add 'low' class if stock is 3 or less — shows red left border -->
+    <div class="product-card {{ 'low' if p.stock <= 3 }}">
+
+        <div class="product-name">{{ p.name }}</div>
+        <div class="product-brand">
+            {{ p.brand }} {% if p.brand and p.category %}·{% endif %} {{ p.category }}
+        </div>
+        <div class="product-price">Rs. {{ "%.0f"|format(p.price) }}</div>
+
+        <!-- show size tags -->
+        {% if p.get_sizes() %}
+        <div class="tags">
+            {% for size in p.get_sizes() %}
+            <span class="tag size">{{ size }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- show color tags -->
+        {% if p.get_colors() %}
+        <div class="tags">
+            {% for color in p.get_colors() %}
+            <span class="tag color">{{ color }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if p.description %}
+        <div style="font-size:12px; color:#888; margin-bottom:10px;">{{ p.description }}</div>
+        {% endif %}
+
+        <!-- stock count — red if low -->
+        <div class="stock-label">
+            Stock:
+            <span class="{{ 'stock-low' if p.stock <= 3 else 'stock-ok' }}">
+                {{ p.stock }} pairs {% if p.stock <= 3 %}⚠️ Low Stock{% endif %}
+            </span>
+        </div>
+
+        <!-- update stock and delete actions -->
+        <div class="card-actions">
+            <form method="POST" action="{{ url_for('main.update_stock', product_id=p.id) }}" style="display:flex; gap:8px;">
+                <input type="number" name="stock" class="stock-input" value="{{ p.stock }}" min="0">
+                <button type="submit" class="update-btn">Update</button>
+            </form>
+            <form method="POST" action="{{ url_for('main.delete_product', product_id=p.id) }}"
+                  onsubmit="return confirm('Delete {{ p.name }}? This cannot be undone.')">
+                <button type="submit" class="delete-btn">Delete</button>
+            </form>
+        </div>
+
+    </div>
+    {% endfor %}
+</div>
+
+{% else %}
+<div class="empty">No products yet. Add your first shoe product above.</div>
+{% endif %}
+
 {% endblock %}

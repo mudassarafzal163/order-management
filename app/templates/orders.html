@@ -2,6 +2,7 @@
 {% block content %}
 <style>
     .page-title { font-size: 22px; font-weight: 700; margin-bottom: 24px; }
+
     .add-form {
         background: white;
         border-radius: 12px;
@@ -10,17 +11,30 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     }
     .add-form h3 { margin-bottom: 16px; font-size: 16px; color: #1a1a2e; }
-    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-    .form-row input, .form-row select {
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label { font-size: 12px; color: #888; font-weight: 600; }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
         padding: 10px 14px;
         border: 1px solid #ddd;
         border-radius: 8px;
         font-size: 14px;
         outline: none;
+        background: #fafafa;
     }
-    .form-row input:focus, .form-row select:focus { border-color: #4ecca3; }
+    .form-group input:focus,
+    .form-group select:focus { border-color: #4ecca3; background: white; }
+
     .btn {
-        padding: 10px 24px;
+        padding: 10px 28px;
         background: #4ecca3;
         color: #1a1a2e;
         font-weight: 700;
@@ -28,52 +42,122 @@
         border-radius: 8px;
         cursor: pointer;
         font-size: 14px;
-        margin-top: 12px;
     }
+
+    /* orders table */
     table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
     th { background: #1a1a2e; color: #4ecca3; padding: 12px 16px; text-align: left; font-size: 13px; }
-    td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f2f5; }
+    td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #f0f2f5; vertical-align: top; }
     tr:last-child td { border-bottom: none; }
+
+    /* status badges */
     .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .badge.Pending { background: #fff3cd; color: #856404; }
     .badge.Confirmed { background: #cce5ff; color: #004085; }
     .badge.Packed { background: #d4edda; color: #155724; }
     .badge.Delivered { background: #4ecca3; color: #1a1a2e; }
-    select.status-select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; }
+
+    /* platform badges */
+    .platform { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #f0f2f5; color: #555; }
+
+    .status-select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; }
+    .small { font-size: 12px; color: #888; }
 </style>
 
 <div class="page-title">📦 Orders</div>
 
+<!-- ── ADD ORDER FORM ── -->
 <div class="add-form">
     <h3>➕ Add New Order</h3>
     <form method="POST" action="{{ url_for('main.add_order') }}">
-        <div class="form-row">
-            <input type="text" name="customer_name" placeholder="Customer Name" required>
-            <input type="text" name="customer_phone" placeholder="Phone (03xx-xxxxxxx)" required>
-            <select name="product_id" required>
-                <option value="">Select Product</option>
-                {% for p in products %}
-                <option value="{{ p.id }}">{{ p.name }} — Rs.{{ p.price }} ({{ p.stock }} left)</option>
-                {% endfor %}
-            </select>
-            <input type="number" name="quantity" placeholder="Quantity" min="1" required>
-            <select name="platform">
-                <option value="WhatsApp">WhatsApp</option>
-                <option value="Instagram">Instagram</option>
-                <option value="Walk-in">Walk-in</option>
-                <option value="Phone">Phone</option>
-            </select>
+
+        <!-- Row 1 — customer info -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Customer Name *</label>
+                <input type="text" name="customer_name" placeholder="e.g. Ahmed Khan" required>
+            </div>
+            <div class="form-group">
+                <label>Phone Number *</label>
+                <input type="text" name="customer_phone" placeholder="e.g. 0312-3456789" required>
+            </div>
+            <div class="form-group">
+                <label>Delivery Address</label>
+                <input type="text" name="customer_address" placeholder="e.g. Block 5, Gulshan, Karachi">
+            </div>
+            <div class="form-group">
+                <label>Order Platform *</label>
+                <!-- where did this order come from -->
+                <select name="platform">
+                    <option value="WhatsApp">WhatsApp</option>
+                    <option value="Instagram">Instagram</option>
+                    <option value="Walk-in">Walk-in</option>
+                    <option value="Phone">Phone Call</option>
+                    <option value="Facebook">Facebook</option>
+                </select>
+            </div>
         </div>
-        <button class="btn" type="submit">Add Order</button>
+
+        <!-- Row 2 — product selection -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Select Product *</label>
+                <!-- when product changes, JS fetches its sizes and colors -->
+                <select name="product_id" id="product_select" required onchange="loadProductDetails(this.value)">
+                    <option value="">Choose a shoe</option>
+                    {% for p in products %}
+                    <option value="{{ p.id }}">{{ p.name }} — Rs.{{ "%.0f"|format(p.price) }} ({{ p.stock }} left)</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Size</label>
+                <!-- filled dynamically by JS when product is selected -->
+                <select name="size" id="size_select">
+                    <option value="">Select product first</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Color</label>
+                <!-- filled dynamically by JS when product is selected -->
+                <select name="color" id="color_select">
+                    <option value="">Select product first</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity *</label>
+                <input type="number" name="quantity" id="quantity" placeholder="e.g. 1" min="1" value="1" required onchange="updateTotal()">
+            </div>
+        </div>
+
+        <!-- Row 3 — pricing and notes -->
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Delivery Charge (Rs.)</label>
+                <input type="number" name="delivery_charge" id="delivery_charge" placeholder="e.g. 150" value="0" onchange="updateTotal()">
+            </div>
+            <div class="form-group">
+                <label>Estimated Total</label>
+                <!-- calculated live by JS — read only -->
+                <input type="text" id="total_display" value="Rs. 0" readonly style="background:#f0f2f5; font-weight:700; color:#4ecca3;">
+            </div>
+            <div class="form-group" style="grid-column: span 2;">
+                <label>Order Notes</label>
+                <input type="text" name="notes" placeholder="e.g. Customer wants gift wrap, urgent delivery">
+            </div>
+        </div>
+
+        <button class="btn" type="submit">Place Order</button>
     </form>
 </div>
 
+<!-- ── ORDERS TABLE ── -->
 <table>
     <thead>
         <tr>
             <th>#</th>
             <th>Customer</th>
-            <th>Product</th>
+            <th>Shoe Details</th>
             <th>Qty</th>
             <th>Total</th>
             <th>Platform</th>
@@ -85,13 +169,31 @@
         {% for order in orders %}
         <tr>
             <td>{{ order.id }}</td>
-            <td>{{ order.customer_name }}<br><small style="color:#888">{{ order.customer_phone }}</small></td>
-            <td>{{ order.product.name }}</td>
-            <td>{{ order.quantity }}</td>
-            <td>Rs. {{ "%.0f"|format(order.total) }}</td>
-            <td>{{ order.platform }}</td>
-            <td style="font-size:12px; color:#888">{{ order.created_at.strftime('%d %b, %H:%M') }}</td>
             <td>
+                {{ order.customer_name }}<br>
+                <span class="small">{{ order.customer_phone }}</span><br>
+                {% if order.customer_address %}
+                <span class="small">📍 {{ order.customer_address }}</span>
+                {% endif %}
+            </td>
+            <td>
+                <strong>{{ order.product.name }}</strong><br>
+                <!-- show size and color if available -->
+                {% if order.size %}<span class="small">Size: {{ order.size }}</span><br>{% endif %}
+                {% if order.color %}<span class="small">Color: {{ order.color }}</span><br>{% endif %}
+                {% if order.notes %}<span class="small">📝 {{ order.notes }}</span>{% endif %}
+            </td>
+            <td>{{ order.quantity }}</td>
+            <td>
+                Rs. {{ "%.0f"|format(order.total) }}<br>
+                {% if order.delivery_charge > 0 %}
+                <span class="small">+Rs.{{ "%.0f"|format(order.delivery_charge) }} delivery</span>
+                {% endif %}
+            </td>
+            <td><span class="platform">{{ order.platform }}</span></td>
+            <td class="small">{{ order.created_at.strftime('%d %b %Y') }}<br>{{ order.created_at.strftime('%H:%M') }}</td>
+            <td>
+                <!-- status dropdown — submits form automatically on change -->
                 <form method="POST" action="{{ url_for('main.update_order', order_id=order.id) }}">
                     <select name="status" class="status-select" onchange="this.form.submit()">
                         {% for s in ['Pending', 'Confirmed', 'Packed', 'Delivered'] %}
@@ -102,8 +204,57 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="8" style="text-align:center; color:#888; padding:30px;">No orders yet. Add one above.</td></tr>
+        <tr>
+            <td colspan="8" style="text-align:center; color:#888; padding:30px;">
+                No orders yet. Add one above.
+            </td>
+        </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<!-- ── JAVASCRIPT ── -->
+<script>
+    // store product price for total calculation
+    let currentPrice = 0;
+
+    // called when shop owner selects a product from dropdown
+    // fetches sizes and colors from our Flask API
+    function loadProductDetails(productId) {
+        if (!productId) return;
+
+        // call the API route we built in routes.py
+        fetch(`/api/product/${productId}`)
+            .then(res => res.json())
+            .then(data => {
+                currentPrice = data.price;
+
+                // fill size dropdown with product sizes
+                const sizeSelect = document.getElementById('size_select');
+                sizeSelect.innerHTML = '<option value="">Any Size</option>';
+                data.sizes.forEach(size => {
+                    sizeSelect.innerHTML += `<option value="${size}">${size}</option>`;
+                });
+
+                // fill color dropdown with product colors
+                const colorSelect = document.getElementById('color_select');
+                colorSelect.innerHTML = '<option value="">Any Color</option>';
+                data.colors.forEach(color => {
+                    colorSelect.innerHTML += `<option value="${color}">${color}</option>`;
+                });
+
+                // update total display
+                updateTotal();
+            });
+    }
+
+    // recalculates total whenever quantity or delivery charge changes
+    function updateTotal() {
+        const qty = parseInt(document.getElementById('quantity').value) || 1;
+        const delivery = parseFloat(document.getElementById('delivery_charge').value) || 0;
+        const total = (currentPrice * qty) + delivery;
+        document.getElementById('total_display').value = `Rs. ${total.toFixed(0)}`;
+    }
+</script>
+
 {% endblock %}
